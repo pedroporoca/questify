@@ -92,7 +92,7 @@ Ao completar as missões, o herói sobe de nível, criando um ciclo de **motiva�
 
 ## 👥 Autores
 - **Pedro Lucca**  
-- **Aguinaldo Neto**
+
 
 ---
 
