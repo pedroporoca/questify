@@ -1,0 +1,32 @@
+{
+    "prczin": {
+        "senha": "luquinhag06",
+        "email": "pedroluccagp06@gmail.com",
+        "heroi": {
+            "nome": "Marcelinho",
+            "classe": "Guerreiro",
+            "level": 2,
+            "xp": 80,
+            "quests": [
+                {
+                    "titulo": "Fazer dever de casa",
+                    "dificuldade": "Média",
+                    "xp": 60,
+                    "status": "concluida"
+                },
+                {
+                    "titulo": "Fazer atividade fisica",
+                    "dificuldade": "Média",
+                    "xp": 60,
+                    "status": "concluida"
+                },
+                {
+                    "titulo": "Ir para academia",
+                    "dificuldade": "Média",
+                    "xp": 60,
+                    "status": "concluida"
+                }
+            ]
+        }
+    }
+}
