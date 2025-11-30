@@ -1,23 +1,24 @@
-# models.py
-# Aqui definimos as Classes (os moldes dos objetos)
-# models.py
+from datetime import datetime
 
 class Quest:
-    def __init__(self, titulo, dificuldade, xp, status="ativa"):
+    def __init__(self, titulo, dificuldade, xp, status="ativa", data_conclusao=None):
         self.titulo = titulo
         self.dificuldade = dificuldade
         self.xp = xp
         self.status = status
+        self.data_conclusao = data_conclusao
 
     def concluir(self):
         self.status = "concluida"
-
+        self.data_conclusao = datetime.now().strftime("%d/%m/%Y %H:%M")
     def to_dict(self):
         return {
             "titulo": self.titulo,
             "dificuldade": self.dificuldade,
             "xp": self.xp,
-            "status": self.status
+            "status": self.status,
+            "data_conclusao": self.data_conclusao
+        
         }
 
 class Heroi:
@@ -29,7 +30,7 @@ class Heroi:
         self.quests = []
         if quests:
             for q in quests:
-                self.quests.append(Quest(q['titulo'], q['dificuldade'], q['xp'], q['status']))
+                self.quests.append(Quest(q['titulo'], q['dificuldade'], q['xp'], q['status'], q.get('data_conclusao')))
 
     def adicionar_xp(self, quantidade):
         self.xp += quantidade
@@ -44,7 +45,6 @@ class Heroi:
             xp_necessario = self.level * 100
 
     def adicionar_quest(self, quest):
-        # Conta quantas quests ativas existem
         ativas = [q for q in self.quests if q.status == "ativa"]
         if len(ativas) >= 5:
             return False, "Limite de quests ativas atingido!"
@@ -60,7 +60,7 @@ class Heroi:
             "quests": [q.to_dict() for q in self.quests]
         }
 
-class Usuario:  # <--- O ERRO DIZ QUE ESTA CLASSE ESTÁ FALTANDO
+class Usuario: 
     def __init__(self, username, senha, email, heroi_data=None):
         self.username = username
         self.senha = senha

@@ -1,26 +1,24 @@
-# sistema.py
 import json
 import os
 from models import Usuario, Quest
 
-JSON_FILE = "usuarios.json"
+jsonfile = "usuarios.json"
 
 class QuestifyApp:
     def __init__(self):
-        self.usuarios = {} # Dicionário de objetos Usuario
+        self.usuarios = {} 
         self.usuario_logado = None
         self.carregar_dados()
 
     def carregar_dados(self):
-        if not os.path.exists(JSON_FILE):
+        if not os.path.exists(jsonfile):
             return
 
-        with open(JSON_FILE, "r", encoding='utf-8') as f:
+        with open(jsonfile, "r", encoding='utf-8') as f:
             try:
                 dados_raw = json.load(f)
-                # CONVERSÃO MÁGICA: Dicionário -> Objetos
                 for nome_user, dados_user in dados_raw.items():
-                    # Cria o objeto Usuario (que cria o objeto Heroi, que cria as Quests)
+                    
                     novo_usuario = Usuario(
                         nome_user, 
                         dados_user['senha'], 
@@ -31,29 +29,29 @@ class QuestifyApp:
             except json.JSONDecodeError:
                 pass
 
-    def salvar_dados(self):
-        # CONVERSÃO REVERSA: Objetos -> Dicionário
-        dados_para_salvar = {}
-        for nome_user, obj_usuario in self.usuarios.items():
-            dados_para_salvar[nome_user] = obj_usuario.to_dict()
+    def save_dados(self):
         
-        with open(JSON_FILE, "w", encoding='utf-8') as f:
-            json.dump(dados_para_salvar, f, indent=4, ensure_ascii=False)
+        dados = {}
+        for nome_user, obj_usuario in self.usuarios.items():
+            dados[nome_user] = obj_usuario.to_dict()
+        
+        with open(jsonfile, "w", encoding='utf-8') as arquivo:
+            json.dump(dados, arquivo, indent=4, ensure_ascii=False)
 
     def registrar(self, username, senha, email):
         if username in self.usuarios:
             return False, "Usuário já existe."
         
-        # Cria o objeto Usuario
+        
         novo_user = Usuario(username, senha, email)
         self.usuarios[username] = novo_user
-        self.salvar_dados()
+        self.save_dados()
         return True, "Conta criada com sucesso!"
 
     def login(self, username, senha):
         user = self.usuarios.get(username)
         if user and user.senha == senha:
-            self.usuario_logado = user # Agora user_logado é um OBJETO inteiro!
+            self.usuario_logado = user
             return True
         return False
     

@@ -100,27 +100,68 @@ class QuestifyGUI:
             messagebox.showwarning("Atenção", "Usuário e senha devem ter no mínimo 3 caracteres.")
             return
 
-        sucesso, msg = self.app.register(user, senha, email)
+        sucesso, msg = self.app.registrar(user, senha, email)
         if sucesso:
             messagebox.showinfo("Sucesso", msg)
             self.mostrar_tela_login()
         else:
             messagebox.showerror("Erro", msg)
 
+    def abrir_criacao_heroi(self):
+        
+        janela_criacao = tk.Toplevel(self.root)
+        janela_criacao.title("Crie seu Herói")
+        janela_criacao.geometry("350x300")
+        janela_criacao.configure(bg="#2c3e50")
+        
+        
+        janela_criacao.transient(self.root)
+        janela_criacao.grab_set() 
+        janela_criacao.focus_force()
+
+        tk.Label(janela_criacao, text="NOVO HERÓI", font=("Impact", 20), bg="#2c3e50", fg="#f1c40f").pack(pady=20)
+
+      
+        tk.Label(janela_criacao, text="Nome do Herói:", font=("Arial", 10, "bold"), bg="#2c3e50", fg="white").pack()
+        entry_nome = tk.Entry(janela_criacao, font=("Arial", 12))
+        entry_nome.pack(pady=5, padx=20, fill="x")
+
+        
+        tk.Label(janela_criacao, text="Escolha sua Classe:", font=("Arial", 10, "bold"), bg="#2c3e50", fg="white").pack(pady=(15, 5))
+        
+        classes_disponiveis = ["Guerreiro", "Mago", "Ladrão"]
+        combo_classe = ttk.Combobox(janela_criacao, values=classes_disponiveis, state="readonly", font=("Arial", 11))
+        combo_classe.current(0)
+        combo_classe.pack(pady=5, padx=20, fill="x")
+
+       
+        def confirmar():
+            nome = entry_nome.get().strip()
+            classe = combo_classe.get()
+
+            if len(nome) < 3:
+                messagebox.showwarning("Erro", "O nome deve ter pelo menos 3 caracteres.", parent=janela_criacao)
+                return
+
+           
+            self.app.usuario_logado.criar_heroi(nome, classe)
+            self.app.save_dados()
+            
+            messagebox.showinfo("Sucesso", f"O herói {nome}, o {classe}, nasceu!", parent=self.root)
+            janela_criacao.destroy()
+            self.mostrar_tela_jogo()
+
+       
+        tk.Button(janela_criacao, text="INICIAR JORNADA", command=confirmar, 
+                  bg="#27ae60", fg="white", font=("Arial", 11, "bold")).pack(pady=30, fill="x", padx=20)
+    
     def mostrar_tela_jogo(self):
         self.limpar_janela()
         heroi = self.app.usuario_logado.heroi
 
         if not heroi:
-            nome_heroi = simpledialog.askstring("Criação", "Digite o nome do seu Herói:")
-            if not nome_heroi: 
-                self.app.logout()
-                self.mostrar_tela_login()
-                return
-            
-            self.app.usuario_logado.criar_heroi(nome_heroi, "Guerreiro")
-            self.app.salvar_dados()
-            heroi = self.app.usuario_logado.heroi
+           self.abrir_criacao_heroi()
+           return
 
         painel_heroi = tk.Frame(self.root, bg="#333", pady=10)
         painel_heroi.pack(fill="x")
@@ -133,14 +174,32 @@ class QuestifyGUI:
         barra_xp = ttk.Progressbar(painel_heroi, length=300, maximum=xp_max, value=heroi.xp)
         barra_xp.pack(pady=5)
 
-        frame_quests = tk.Frame(self.root, padx=20, pady=20)
-        frame_quests.pack(expand=True, fill="both")
+        frame_abas = tk.Frame(self.root, bg= "#ffffff")
+        frame_abas.pack(expand=True, fill="both", padx=20, pady=10)
 
-        tk.Label(frame_quests, text="SUAS QUESTS", font=("Arial", 10, "bold")).pack(anchor="w")
+        # Cria o componente de abas
+        self.abas = ttk.Notebook(frame_abas)
+        self.abas.pack(expand=True, fill="both")
 
-        self.lista_box = tk.Listbox(frame_quests, font=("Courier", 10), height=15)
-        self.lista_box.pack(fill="both", expand=True, pady=10)
-        
+        # --- ABA 1: MISSÕES ATIVAS ---
+        frame_ativas = tk.Frame(self.abas, bg="white")
+        self.abas.add(frame_ativas, text="  Missões Ativas  ")
+
+        # Lista visual para as ativas
+        self.lista_ativas = tk.Listbox(frame_ativas, font=("Courier", 11), height=10, 
+                                       bg="#fafafa", selectbackground="#e0e0e0", selectforeground="black")
+        self.lista_ativas.pack(expand=True, fill="both", padx=5, pady=5)
+
+        # --- ABA 2: CONCLUÍDAS ---
+        frame_concluidas = tk.Frame(self.abas, bg="white")
+        self.abas.add(frame_concluidas, text="  Histórico  ")
+
+        # Lista visual para as concluídas (fundo levemente verde)
+        self.lista_concluidas = tk.Listbox(frame_concluidas, font=("Courier", 10), height=10, 
+                                           bg="#f0fff0", fg="#555", selectbackground="#d0f0c0", selectforeground="black")
+        self.lista_concluidas.pack(expand=True, fill="both", padx=5, pady=5)
+
+        # Preenche as duas listas
         self.atualizar_lista_quests()
 
         frame_botoes = tk.Frame(self.root, pady=10)
@@ -224,53 +283,99 @@ class QuestifyGUI:
             return None
 
     def atualizar_lista_quests(self):
-        self.lista_box.delete(0, tk.END) 
+        self.lista_ativas.delete(0, tk.END)
+        self.lista_concluidas.delete(0, tk.END)
+        
         heroi = self.app.usuario_logado.heroi
+        
+        self.quests_ativas_objs = [] 
         
         for q in heroi.quests:
-            status = "[OK]" if q.status == "concluida" else "[  ]"
-            texto = f"{status} {q.titulo} ({q.dificuldade} - {q.xp} XP)"
-            self.lista_box.insert(tk.END, texto)
+            if q.status == "ativa":
+                texto = f"{q.titulo} ({q.dificuldade} - {q.xp} XP)"
+                self.lista_ativas.insert(tk.END, texto)
+                self.quests_ativas_objs.append(q) 
             
-            
-            if q.status == "concluida":
-                self.lista_box.itemconfig(tk.END, {'fg': 'gray'})
+            else: 
+                data = q.data_conclusao if hasattr(q, 'data_conclusao') and q.data_conclusao else "---"
+                texto = f"[OK] {q.titulo} - Data: {data}"
+                self.lista_concluidas.insert(tk.END, texto)
 
     def gui_add_quest(self):
+        janela_quest = tk.Toplevel(self.root)
+        janela_quest.title("Nova Quest")
+        janela_quest.geometry("300x250")
         
-        titulo = simpledialog.askstring("Nova Quest", "Título da Quest:")
-        if titulo:
-           
+        tk.Label(janela_quest, text="Título da Tarefa:", font=("Arial", 10)).pack(pady=(20, 5))
+        entry_titulo = tk.Entry(janela_quest, font=("Arial", 11))
+        entry_titulo.pack(pady=5, padx=20, fill="x")
+
+        tk.Label(janela_quest, text="Dificuldade:", font=("Arial", 10)).pack(pady=(10, 5))
+        
+        opcoes = ["Fácil (30 XP)", "Média (60 XP)", "Difícil (120 XP)"]
+        combo_dificuldade = ttk.Combobox(janela_quest, values=opcoes, state="readonly", font=("Arial", 10))
+        combo_dificuldade.current(1) 
+        combo_dificuldade.pack(pady=5, padx=20, fill="x")
+
+        def confirmar_adicao():
+            titulo = entry_titulo.get().strip()
+            selecao = combo_dificuldade.get()
+            
+            if not titulo:
+                messagebox.showwarning("Erro", "O título é obrigatório!", parent=janela_quest)
+                return
+
+            if "Fácil" in selecao:
+                dif, xp = "Fácil", 30
+            elif "Média" in selecao:
+                dif, xp = "Média", 60
+            else:
+                dif, xp = "Difícil", 120
+
             from models import Quest
-            nova_quest = Quest(titulo, "Média", 60)
+            nova_quest = Quest(titulo, dif, xp)
             
             sucesso, msg = self.app.usuario_logado.heroi.adicionar_quest(nova_quest)
+            
             if sucesso:
-                self.app.salvar_dados()
+                self.app.save_dados()
                 self.atualizar_lista_quests()
+                janela_quest.destroy()
+                messagebox.showinfo("Sucesso", "Quest criada!", parent=self.root)
             else:
-                messagebox.showwarning("Erro", msg)
+                messagebox.showerror("Erro", msg, parent=janela_quest)
 
+        tk.Button(janela_quest, text="CRIAR", command=confirmar_adicao, 
+                  bg="#2196F3", fg="white").pack(pady=20, fill="x", padx=20)
+    
     def gui_concluir_quest(self):
-        selecionado = self.lista_box.curselection()
+       
+        if self.abas.index("current") != 0:
+            messagebox.showinfo("Info", "Vá para a aba 'Missões Ativas' para concluir tarefas.")
+            return
+
+        # Pega a seleção da lista de ATIVAS
+        selecionado = self.lista_ativas.curselection()
+        
         if not selecionado:
-            messagebox.showwarning("Atenção", "Selecione uma quest na lista para concluir.")
+            messagebox.showwarning("Atenção", "Selecione uma missão ativa para concluir.")
             return
 
-        index = selecionado[0]
-        heroi = self.app.usuario_logado.heroi
-        quest = heroi.quests[index]
+        index_visual = selecionado[0]
+        
+        # Pega o objeto Quest real usando nossa lista auxiliar
+        quest = self.quests_ativas_objs[index_visual]
 
-        if quest.status == "concluida":
-            messagebox.showinfo("Info", "Essa quest já foi concluída!")
-            return
-
+        # Lógica de conclusão
         quest.concluir()
+        heroi = self.app.usuario_logado.heroi
         heroi.adicionar_xp(quest.xp)
-        self.app.salvar_dados()
+        
+        self.app.save_dados()
         
         messagebox.showinfo("Sucesso", f"Quest concluída! +{quest.xp} XP")
         
+        # Redesenha a tela (a quest vai mover para a outra aba automaticamente)
         self.mostrar_tela_jogo()
 
     def gui_logout(self):
