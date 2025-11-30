@@ -1,7 +1,3 @@
-# models.py
-# Aqui definimos as Classes (os moldes dos objetos)
-# models.py
-
 class Quest:
     def __init__(self, titulo, dificuldade, xp, status="ativa"):
         self.titulo = titulo
@@ -44,7 +40,7 @@ class Heroi:
             xp_necessario = self.level * 100
 
     def adicionar_quest(self, quest):
-        # Conta quantas quests ativas existem
+
         ativas = [q for q in self.quests if q.status == "ativa"]
         if len(ativas) >= 5:
             return False, "Limite de quests ativas atingido!"
@@ -60,7 +56,7 @@ class Heroi:
             "quests": [q.to_dict() for q in self.quests]
         }
 
-class Usuario:  # <--- O ERRO DIZ QUE ESTA CLASSE ESTÁ FALTANDO
+class Usuario:
     def __init__(self, username, senha, email, heroi_data=None):
         self.username = username
         self.senha = senha
