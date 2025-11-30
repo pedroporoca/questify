@@ -177,29 +177,23 @@ class QuestifyGUI:
         frame_abas = tk.Frame(self.root, bg= "#ffffff")
         frame_abas.pack(expand=True, fill="both", padx=20, pady=10)
 
-        # Cria o componente de abas
+
         self.abas = ttk.Notebook(frame_abas)
         self.abas.pack(expand=True, fill="both")
 
-        # --- ABA 1: MISSÕES ATIVAS ---
         frame_ativas = tk.Frame(self.abas, bg="white")
         self.abas.add(frame_ativas, text="  Missões Ativas  ")
 
-        # Lista visual para as ativas
         self.lista_ativas = tk.Listbox(frame_ativas, font=("Courier", 11), height=10, 
                                        bg="#fafafa", selectbackground="#e0e0e0", selectforeground="black")
         self.lista_ativas.pack(expand=True, fill="both", padx=5, pady=5)
 
-        # --- ABA 2: CONCLUÍDAS ---
         frame_concluidas = tk.Frame(self.abas, bg="white")
         self.abas.add(frame_concluidas, text="  Histórico  ")
-
-        # Lista visual para as concluídas (fundo levemente verde)
         self.lista_concluidas = tk.Listbox(frame_concluidas, font=("Courier", 10), height=10, 
                                            bg="#f0fff0", fg="#555", selectbackground="#d0f0c0", selectforeground="black")
         self.lista_concluidas.pack(expand=True, fill="both", padx=5, pady=5)
 
-        # Preenche as duas listas
         self.atualizar_lista_quests()
 
         frame_botoes = tk.Frame(self.root, pady=10)
@@ -354,7 +348,6 @@ class QuestifyGUI:
             messagebox.showinfo("Info", "Vá para a aba 'Missões Ativas' para concluir tarefas.")
             return
 
-        # Pega a seleção da lista de ATIVAS
         selecionado = self.lista_ativas.curselection()
         
         if not selecionado:
@@ -363,10 +356,7 @@ class QuestifyGUI:
 
         index_visual = selecionado[0]
         
-        # Pega o objeto Quest real usando nossa lista auxiliar
         quest = self.quests_ativas_objs[index_visual]
-
-        # Lógica de conclusão
         quest.concluir()
         heroi = self.app.usuario_logado.heroi
         heroi.adicionar_xp(quest.xp)
@@ -375,7 +365,6 @@ class QuestifyGUI:
         
         messagebox.showinfo("Sucesso", f"Quest concluída! +{quest.xp} XP")
         
-        # Redesenha a tela (a quest vai mover para a outra aba automaticamente)
         self.mostrar_tela_jogo()
 
     def gui_logout(self):
