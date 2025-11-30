@@ -6,7 +6,7 @@ JSON_FILE = "usuarios.json"
 
 class QuestifyApp:
     def __init__(self):
-        self.usuarios = {} # Dicionário de objetos Usuario
+        self.usuarios = {} 
         self.usuario_logado = None
         self.carregar_dados()
 
@@ -17,10 +17,9 @@ class QuestifyApp:
         with open(JSON_FILE, "r", encoding='utf-8') as f:
             try:
                 dados_raw = json.load(f)
-                # CONVERSÃO MÁGICA: Dicionário -> Objetos
+                
                 for nome_user, dados_user in dados_raw.items():
-                    # Cria o objeto Usuario (que cria o objeto Heroi, que cria as Quests)
-                    novo_usuario = Usuario(
+                  novo_usuario = Usuario(
                         nome_user, 
                         dados_user['senha'], 
                         dados_user['email'], 
@@ -31,7 +30,6 @@ class QuestifyApp:
                 pass
 
     def salvar_dados(self):
-        # CONVERSÃO REVERSA: Objetos -> Dicionário
         dados_para_salvar = {}
         for nome_user, obj_usuario in self.usuarios.items():
             dados_para_salvar[nome_user] = obj_usuario.to_dict()
@@ -43,7 +41,6 @@ class QuestifyApp:
         if username in self.usuarios:
             return False, "Usuário já existe."
         
-        # Cria o objeto Usuario
         novo_user = Usuario(username, senha, email)
         self.usuarios[username] = novo_user
         self.salvar_dados()
@@ -52,7 +49,7 @@ class QuestifyApp:
     def login(self, username, senha):
         user = self.usuarios.get(username)
         if user and user.senha == senha:
-            self.usuario_logado = user # Agora user_logado é um OBJETO inteiro!
+            self.usuario_logado = user 
             return True
         return False
     
