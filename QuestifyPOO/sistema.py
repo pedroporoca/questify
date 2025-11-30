@@ -1,4 +1,3 @@
-# sistema.py
 import json
 import os
 from models import Usuario, Quest
