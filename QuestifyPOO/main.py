@@ -424,11 +424,10 @@ class QuestifyGUI:
                 heroi.iniciar_boss(tarefas)
                 self.app.save_dados()
                 janela_boss.destroy()
-                self.gui_boss_quest() # Reabre para mostrar o modo ativo
+                self.gui_boss_quest()
 
             tk.Button(janela_boss, text="INICIAR DESAFIO (+2000 XP)", command=iniciar, bg="#c0392b", fg="white").pack(pady=20)
 
-        # SE O BOSS ESTIVER ATIVO (MOSTRA CHECKLIST)
         else:
             tk.Label(janela_boss, text="Derrote o chefe completando as tarefas:", fg="white", bg="#222").pack(pady=10)
             
@@ -444,16 +443,16 @@ class QuestifyGUI:
                 if not tarefa["feita"]:
                     def concluir_t(idx=i):
                         fim, msg = heroi.concluir_tarefa_boss(idx)
-                        novas_conq = heroi.verificar_conquistas() # Checa conquistas
+                        novas_conq = heroi.verificar_conquistas() 
                         self.app.save_dados()
                         
-                        if fim: # Se matou o chefe
+                        if fim: 
                             messagebox.showinfo("VITÓRIA", msg, parent=janela_boss)
                             janela_boss.destroy()
-                            self.mostrar_tela_jogo() # Atualiza XP na tela principal
+                            self.mostrar_tela_jogo() 
                         else:
                             janela_boss.destroy()
-                            self.gui_boss_quest() # Reabre para atualizar status
+                            self.gui_boss_quest() 
 
                     tk.Button(frame_t, text="Concluir", command=concluir_t, bg="#8e44ad", fg="white", font=("Arial", 8)).pack(side="right")
     

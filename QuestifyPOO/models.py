@@ -75,6 +75,7 @@ class Heroi:
         xp_necessario = self.level * 100
         while self.xp >= xp_necessario:
             self.level += 1
+            self.pontos_distribuir += 1
             self.xp -= xp_necessario
             print(f"🎉 LEVEL UP! {self.nome} alcançou o nível {self.level}!")
             xp_necessario = self.level * 100
