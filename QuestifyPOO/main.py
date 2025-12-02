@@ -155,6 +155,7 @@ class QuestifyGUI:
         tk.Button(janela_criacao, text="INICIAR JORNADA", command=confirmar, 
                   bg="#27ae60", fg="white", font=("Arial", 11, "bold")).pack(pady=30, fill="x", padx=20)
     
+    
     def mostrar_tela_jogo(self):
         self.limpar_janela()
         heroi = self.app.usuario_logado.heroi
@@ -202,13 +203,15 @@ class QuestifyGUI:
         tk.Button(frame_botoes, text="Adicionar Quest", command=self.gui_add_quest).pack(side="left", expand=True, padx=5)
         tk.Button(frame_botoes, text="Concluir Selecionada", command=self.gui_concluir_quest, bg="#8BC34A").pack(side="left", expand=True, padx=5)
         tk.Button(frame_botoes, text="Visualizar Héroi", command=self.gui_visualizar_heroi, bg="#f39c12", fg="white").pack(side="left", expand=True, padx=2)
+        tk.Button(frame_botoes, text="BOSS", command=self.gui_boss_quest, bg="#8e44ad", fg="white").pack(side="left", expand=True, padx=5)
         tk.Button(frame_botoes, text="Sair / Logout", command=self.gui_logout, bg="#F44336", fg="white").pack(side="left", expand=True, padx=5)
-
+        
+    
     def gui_visualizar_heroi(self):
     
         perfil = tk.Toplevel(self.root)
         perfil.title("Perfil do Herói")
-        perfil.geometry("400x600")
+        perfil.geometry("500x800")
         perfil.configure(bg="#ffffff") 
         
         
@@ -255,8 +258,53 @@ class QuestifyGUI:
 
         
         tk.Button(perfil, text="FECHAR", command=perfil.destroy, bg="#c0392b", fg="white", font=("Arial", 10, "bold")).pack(pady=10)
+        
+        frame_attr = tk.Frame(perfil, bg="white", bd=1, relief="solid", padx=10, pady=10)
+        frame_attr.pack(fill="x", padx=20, pady=10)
+
+        tk.Label(frame_attr, text="ATRIBUTOS", font=("Arial", 12, "bold"), bg="white").pack(pady=5)
+        
+        if heroi.pontos_distribuir > 0:
+            tk.Label(frame_attr, text=f"Pontos Disponíveis: {heroi.pontos_distribuir}", fg="green", font=("Arial", 10, "bold"), bg="white").pack()
     
-   
+        def atualizar_labels():
+            for widget in frame_lista_attr.winfo_children():
+                widget.destroy()
+            
+            for attr, valor in heroi.atributos.items():
+                f_linha = tk.Frame(frame_lista_attr, bg="white")
+                f_linha.pack(fill="x", pady=2)
+                
+                tk.Label(f_linha, text=f"{attr}: {valor}", font=("Courier", 12), bg="white").pack(side="left")
+                
+                if heroi.pontos_distribuir > 0:
+                    btn_add = tk.Button(f_linha, text="+", font=("Arial", 8), bg="#4CAF50", fg="white",
+                                        command=lambda a=attr: evoluir_atributo(a))
+                    btn_add.pack(side="right")
+
+        def evoluir_atributo(attr):
+            if heroi.distribuir_ponto(attr):
+                self.app.save_dados()
+                perfil.destroy()
+                self.gui_visualizar_heroi() 
+
+        frame_lista_attr = tk.Frame(frame_attr, bg="white")
+        frame_lista_attr.pack(fill="x")
+        atualizar_labels()
+
+        frame_conq = tk.Frame(perfil, bg="#e0e0e0", padx=10, pady=10)
+        frame_conq.pack(fill="both", expand=True, padx=20, pady=10)
+        tk.Label(frame_conq, text="🏆 CONQUISTAS", font=("Arial", 10, "bold"), bg="#e0e0e0").pack()
+        
+        if not heroi.conquistas:
+            tk.Label(frame_conq, text="Nenhuma conquista ainda.", bg="#e0e0e0").pack()
+        else:
+            for c in heroi.conquistas:
+                tk.Label(frame_conq, text=f"★ {c}", fg="#d35400", bg="#e0e0e0", font=("Arial", 10)).pack(anchor="w")
+
+        tk.Button(perfil, text="Fechar", command=perfil.destroy).pack(pady=10)
+
+
 
     def carregar_imagem(self, nome_arquivo, tamanho=(200, 200)):
         pasta_atual = os.path.dirname(os.path.abspath(__file__))
@@ -342,6 +390,73 @@ class QuestifyGUI:
         tk.Button(janela_quest, text="CRIAR", command=confirmar_adicao, 
                   bg="#2196F3", fg="white").pack(pady=20, fill="x", padx=20)
     
+    def gui_boss_quest(self):
+        janela_boss = tk.Toplevel(self.root)
+        janela_boss.title("Missão de Chefe")
+        janela_boss.geometry("400x500")
+        janela_boss.configure(bg="#222")
+
+        heroi = self.app.usuario_logado.heroi
+        dados_boss = heroi.boss_data
+
+        tk.Label(janela_boss, text="👹 MISSÃO DE CHEFE 👹", font=("Impact", 22), bg="#222", fg="#e74c3c").pack(pady=20)
+        
+        if not dados_boss["ativo"]:
+            pode, msg = heroi.pode_iniciar_boss()
+            if not pode:
+                tk.Label(janela_boss, text=msg, fg="white", bg="#222", font=("Arial", 12)).pack(pady=20)
+                return
+
+            tk.Label(janela_boss, text="Defina 5 tarefas difíceis para esta semana:", fg="#ddd", bg="#222").pack()
+            
+            entradas = []
+            for i in range(5):
+                e = tk.Entry(janela_boss)
+                e.pack(fill="x", padx=20, pady=5)
+                entradas.append(e)
+
+            def iniciar():
+                tarefas = [e.get().strip() for e in entradas]
+                if any(t == "" for t in tarefas):
+                    messagebox.showwarning("Erro", "Preencha as 5 tarefas!", parent=janela_boss)
+                    return
+                
+                heroi.iniciar_boss(tarefas)
+                self.app.save_dados()
+                janela_boss.destroy()
+                self.gui_boss_quest() # Reabre para mostrar o modo ativo
+
+            tk.Button(janela_boss, text="INICIAR DESAFIO (+2000 XP)", command=iniciar, bg="#c0392b", fg="white").pack(pady=20)
+
+        # SE O BOSS ESTIVER ATIVO (MOSTRA CHECKLIST)
+        else:
+            tk.Label(janela_boss, text="Derrote o chefe completando as tarefas:", fg="white", bg="#222").pack(pady=10)
+            
+            for i, tarefa in enumerate(dados_boss["tarefas"]):
+                frame_t = tk.Frame(janela_boss, bg="#222")
+                frame_t.pack(fill="x", padx=20, pady=5)
+                
+                status = "✅" if tarefa["feita"] else "❌"
+                cor = "#2ecc71" if tarefa["feita"] else "white"
+                
+                tk.Label(frame_t, text=f"{status} {tarefa['desc']}", fg=cor, bg="#222", font=("Arial", 11)).pack(side="left")
+                
+                if not tarefa["feita"]:
+                    def concluir_t(idx=i):
+                        fim, msg = heroi.concluir_tarefa_boss(idx)
+                        novas_conq = heroi.verificar_conquistas() # Checa conquistas
+                        self.app.save_dados()
+                        
+                        if fim: # Se matou o chefe
+                            messagebox.showinfo("VITÓRIA", msg, parent=janela_boss)
+                            janela_boss.destroy()
+                            self.mostrar_tela_jogo() # Atualiza XP na tela principal
+                        else:
+                            janela_boss.destroy()
+                            self.gui_boss_quest() # Reabre para atualizar status
+
+                    tk.Button(frame_t, text="Concluir", command=concluir_t, bg="#8e44ad", fg="white", font=("Arial", 8)).pack(side="right")
+    
     def gui_concluir_quest(self):
        
         if self.abas.index("current") != 0:
@@ -370,6 +485,8 @@ class QuestifyGUI:
     def gui_logout(self):
         self.app.logout()
         self.mostrar_tela_login()
+
+
 
 if __name__ == "__main__":
     root = tk.Tk()

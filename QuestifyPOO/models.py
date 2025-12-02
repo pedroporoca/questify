@@ -22,7 +22,25 @@ class Quest:
         }
 
 class Heroi:
-    def __init__(self, nome, classe_heroi, level=1, xp=0, quests=None):
+    def __init__(self, nome, classe_heroi, level=1, xp=0, quests=None, atributos=None, pontos_distribuir=0, boss_data=None, conquistas=None):
+        if atributos:
+            self.atributos = atributos
+        else:
+            self.atributos = self.definir_atributos_base(classe_heroi)
+        
+        self.pontos_distribuir = pontos_distribuir
+        
+        if boss_data:
+            self.boss_data = boss_data
+        else:
+            self.boss_data = {"ativo": False, "tarefas": [], "data_ultimo": None}
+        
+        if conquistas:
+            self.conquistas = conquistas
+        else:
+            self.conquistas = []
+        
+        
         self.nome = nome
         self.classe_heroi = classe_heroi
         self.level = level
@@ -31,7 +49,24 @@ class Heroi:
         if quests:
             for q in quests:
                 self.quests.append(Quest(q['titulo'], q['dificuldade'], q['xp'], q['status'], q.get('data_conclusao')))
-
+    
+    def definir_atributos_base(self, classe):
+        if classe == "Guerreiro":
+            return {"Força": 5, "Inteligência": 2, "Destreza": 3, "Carisma": 3, "Sabedoria": 2}
+        elif classe == "Mago":
+            return {"Força": 2, "Inteligência": 5, "Destreza": 3, "Carisma": 2, "Sabedoria": 4}
+        elif classe == "Ladrão":
+            return {"Força": 3, "Inteligência": 3, "Destreza": 5, "Carisma": 4, "Sabedoria": 2}
+        else:
+            return {"Força": 3, "Inteligência": 3, "Destreza": 3, "Carisma": 3, "Sabedoria": 3}
+    
+    def distribuir_ponto(self, atributo):
+        if self.pontos_distribuir > 0 and atributo in self.atributos:
+            self.atributos[atributo] += 1
+            self.pontos_distribuir -= 1
+            return True
+        return False
+    
     def adicionar_xp(self, quantidade):
         self.xp += quantidade
         self.verificar_level_up()
@@ -50,13 +85,63 @@ class Heroi:
             return False, "Limite de quests ativas atingido!"
         self.quests.append(quest)
         return True, "Quest adicionada!"
+    
+    def pode_iniciar_boss(self):
+        if self.boss_data["ativo"]:
+            return False, "Já existe uma missão de Chefe ativa!"
+        
+        ultimo = self.boss_data.get("data_ultimo")
+        if ultimo:
+            data_ultimo = datetime.strptime(ultimo, "%d/%m/%Y")
+            diferenca = datetime.now() - data_ultimo
+            if diferenca.days < 7:
+                return False, f"O Chefe descansa. Volte em {7 - diferenca.days} dias."
+        
+        return True, "Pode iniciar"
 
+    def iniciar_boss(self, lista_tarefas):
+        tarefas_obj = [{"desc": t, "feita": False} for t in lista_tarefas]
+        self.boss_data["ativo"] = True
+        self.boss_data["tarefas"] = tarefas_obj
+
+    def concluir_tarefa_boss(self, index):
+        if self.boss_data["ativo"]:
+            self.boss_data["tarefas"][index]["feita"] = True
+            todas_feitas = all(t["feita"] for t in self.boss_data["tarefas"])
+            if todas_feitas:
+                self.boss_data["ativo"] = False
+                self.boss_data["tarefas"] = []
+                self.boss_data["data_ultimo"] = datetime.now().strftime("%d/%m/%Y")
+                self.adicionar_xp(2000)
+                return True, "CHEFÃO DERROTADO! +2000 XP"
+            return False, "Tarefa do Chefe concluída!"
+        return False, "Erro."
+
+    def verificar_conquistas(self):
+        novas = []
+        if self.level >= 5 and "Lenda Iniciante (Nvl 5)" not in self.conquistas:
+            self.conquistas.append("Lenda Iniciante (Nvl 5)")
+            novas.append("Lenda Iniciante")
+        
+        concluidas = len([q for q in self.quests if q.status == "concluida"])
+        
+        if concluidas >= 5 and "Trabalhador (5 Quests)" not in self.conquistas:
+            self.conquistas.append("Trabalhador (5 Quests)")
+            novas.append("Trabalhador")
+
+        return novas
+    
+    
     def to_dict(self):
         return {
             "nome": self.nome,
             "classe": self.classe_heroi,
             "level": self.level,
             "xp": self.xp,
+            "atributos": self.atributos,
+            "pontos_distribuir": self.pontos_distribuir,
+            "boss_data": self.boss_data,
+            "conquistas": self.conquistas,
             "quests": [q.to_dict() for q in self.quests]
         }
 
@@ -72,7 +157,11 @@ class Usuario:
                 heroi_data['classe'], 
                 heroi_data['level'], 
                 heroi_data['xp'], 
-                heroi_data.get('quests', [])
+                heroi_data.get('quests', []),
+                heroi_data.get('atributos'),
+                heroi_data.get('pontos_distribuir', 0),
+                heroi_data.get('boss_data'),
+                heroi_data.get('conquistas')
             )
 
     def criar_heroi(self, nome, classe):
