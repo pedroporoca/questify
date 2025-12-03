@@ -211,7 +211,7 @@ class QuestifyGUI:
     
         perfil = tk.Toplevel(self.root)
         perfil.title("Perfil do Herói")
-        perfil.geometry("500x800")
+        perfil.geometry("500x1000")
         perfil.configure(bg="#ffffff") 
         
         
@@ -234,8 +234,8 @@ class QuestifyGUI:
             tk.Label(frame_img, text=f"[{heroi.classe_heroi}]", font=("Impact", 30), bg="#2c3e50", fg="#95a5a6").pack()
 
        
-        tk.Label(perfil, text=heroi.nome.upper(), font=("Impact", 24), bg="#ffffff", fg="#f1c40f").pack()
-        tk.Label(perfil, text=f"Classe: {heroi.classe_heroi}", font=("Arial", 14), bg="#2c3e50", fg="white").pack(pady=5)
+        tk.Label(perfil, text=heroi.nome.upper(), font=("Impact", 24), bg="#ffffff", fg="#054099").pack()
+        tk.Label(perfil, text=f"Classe: {heroi.classe_heroi}", font=("Arial", 14), bg="#ffffff", fg="#000000").pack(pady=5)
 
         
         frame_xp = tk.Frame(perfil, bg="#34495e", padx=20, pady=20)
@@ -283,9 +283,12 @@ class QuestifyGUI:
                     btn_add.pack(side="right")
 
         def evoluir_atributo(attr):
-            if heroi.distribuir_ponto(attr):
+            sucesso, novas_conquistas = heroi.distribuir_ponto(attr)
+            
+            if sucesso:
                 self.app.save_dados()
                 perfil.destroy()
+                self.checar_popup_conquistas(novas_conquistas)
                 self.gui_visualizar_heroi() 
 
         frame_lista_attr = tk.Frame(frame_attr, bg="white")
@@ -456,6 +459,15 @@ class QuestifyGUI:
 
                     tk.Button(frame_t, text="Concluir", command=concluir_t, bg="#8e44ad", fg="white", font=("Arial", 8)).pack(side="right")
     
+    
+    def checar_popup_conquistas(self, novas_conquistas):
+        if novas_conquistas:
+            for conquista in novas_conquistas:
+                self.root.bell() 
+                messagebox.showinfo("🏆 CONQUISTA DESBLOQUEADA!", f"Parabéns! Você alcançou:\n\n★ {conquista}")
+    
+    
+    
     def gui_concluir_quest(self):
        
         if self.abas.index("current") != 0:
@@ -469,22 +481,21 @@ class QuestifyGUI:
             return
 
         index_visual = selecionado[0]
-        
         quest = self.quests_ativas_objs[index_visual]
         quest.concluir()
         heroi = self.app.usuario_logado.heroi
-        heroi.adicionar_xp(quest.xp)
+        novas_conquistas=heroi.adicionar_xp(quest.xp)
         
         self.app.save_dados()
-        
         messagebox.showinfo("Sucesso", f"Quest concluída! +{quest.xp} XP")
-        
+        self.checar_popup_conquistas(novas_conquistas)
         self.mostrar_tela_jogo()
-
+    
+    
     def gui_logout(self):
         self.app.logout()
         self.mostrar_tela_login()
-
+    
 
 
 if __name__ == "__main__":

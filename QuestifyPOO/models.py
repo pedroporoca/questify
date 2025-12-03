@@ -64,12 +64,14 @@ class Heroi:
         if self.pontos_distribuir > 0 and atributo in self.atributos:
             self.atributos[atributo] += 1
             self.pontos_distribuir -= 1
-            return True
-        return False
+            novas = self.verificar_conquistas()
+            return True, novas
+        return False, []
     
     def adicionar_xp(self, quantidade):
         self.xp += quantidade
         self.verificar_level_up()
+        return self.verificar_conquistas()
 
     def verificar_level_up(self):
         xp_necessario = self.level * 100
@@ -118,20 +120,33 @@ class Heroi:
             return False, "Tarefa do Chefe concluída!"
         return False, "Erro."
 
+    
     def verificar_conquistas(self):
+        
         novas = []
-        if self.level >= 5 and "Lenda Iniciante (Nvl 5)" not in self.conquistas:
-            self.conquistas.append("Lenda Iniciante (Nvl 5)")
-            novas.append("Lenda Iniciante")
-        
-        concluidas = len([q for q in self.quests if q.status == "concluida"])
-        
-        if concluidas >= 5 and "Trabalhador (5 Quests)" not in self.conquistas:
-            self.conquistas.append("Trabalhador (5 Quests)")
-            novas.append("Trabalhador")
+        total_concluidas = len([q for q in self.quests if q.status == "concluida"])
+        total_dificeis = len([q for q in self.quests if q.status == "concluida" and q.dificuldade == "Difícil"])
+
+        regras = [
+            ("O Início (1ª Quest)", total_concluidas >= 1),
+            ("Trabalhador (10 Quests)", total_concluidas >= 10),
+            ("Máquina (50 Quests)", total_concluidas >= 50),       
+            ("Desafiante (Hardcore)", total_dificeis >= 1),
+            ("Lenda Iniciante (Nvl 5)", self.level >= 5),
+            ("Herói Épico (Nvl 10)", self.level >= 10),
+            ("Semideus (Nvl 20)", self.level >= 20),
+            ("Hércules (10 Força)", self.atributos.get("Força", 0) >= 10),
+            ("Einstein (10 Int)", self.atributos.get("Inteligência", 0) >= 10),
+            ("Influenciador (10 Car)", self.atributos.get("Carisma", 0) >= 10)
+        ]
+
+        for nome_conquista, condicao_verdadeira in regras:
+            if condicao_verdadeira and nome_conquista not in self.conquistas:
+                self.conquistas.append(nome_conquista)
+                novas.append(nome_conquista)
+                print(f"🏆 CONQUISTA DESBLOQUEADA: {nome_conquista}")
 
         return novas
-    
     
     def to_dict(self):
         return {
